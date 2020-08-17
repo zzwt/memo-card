@@ -1,65 +1,188 @@
-import Head from 'next/head'
-import styles from '../styles/Home.module.css'
+import { useState, useEffect } from "react";
+import Head from "next/head";
+import {
+  Button,
+  Card,
+  Image,
+  Transition,
+  Container,
+  Grid,
+  Header,
+  Dropdown,
+} from "semantic-ui-react";
+
+const cardsOptions = [
+  {
+    key: "1",
+    text: "12",
+    value: 12,
+  },
+  {
+    key: "2",
+    text: "14",
+    value: 14,
+  },
+  {
+    key: "3",
+    text: "16",
+    value: 16,
+  },
+];
 
 export default function Home() {
+  const [cards, setCards] = useState([]);
+  const [totalTry, setTotalTry] = useState(0);
+  const [toMatch, setToMatch] = useState(null);
+  const [finish, setFinish] = useState(false);
+  const [cardsNum, setCardsNum] = useState(12);
+
+  useEffect(() => {
+    initialize(cardsNum);
+  }, []);
+
+  const initialize = (count) => {
+    let newCards = [];
+    for (let i = 0; i < count; i += 2) {
+      newCards.push({
+        src: `/images/${i + 1}.jpg`,
+        found: false,
+        visible: false,
+        identifier: i + 1,
+      });
+      newCards.push({
+        src: `/images/${i + 1}.jpg`,
+        found: false,
+        visible: false,
+        identifier: i + 1,
+      });
+    }
+    shuffle(newCards);
+    setCards(newCards);
+    setTotalTry(0);
+    if (finish) setFinish(false);
+  };
+
+  const shuffle = (newCards) => {
+    for (let i = newCards.length - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * (i + 1));
+      let x = newCards[j];
+      newCards[j] = newCards[i];
+      newCards[i] = x;
+    }
+  };
+
+  const toggleVisible = (index) => {
+    if (cards[index].found) return;
+    if (!toMatch) {
+      console.log("not to match");
+      const newCards = cards.map((card, i) => {
+        if (i === index) card.visible = true;
+        return card;
+      });
+      setCards(newCards);
+      setToMatch({ index, identifier: cards[index].identifier });
+    } else {
+      console.log("to match");
+      setTotalTry(totalTry + 1);
+      if (cards[index].identifier === toMatch.identifier) {
+        console.log("....to match, and matched");
+        const newCards = cards.map((card, i) => {
+          if (i === index) {
+            card.visible = true;
+            card.found = true;
+          }
+          if (i === toMatch.index) {
+            card.found = true;
+          }
+          return card;
+        });
+        setCards(newCards);
+        setToMatch(null);
+      } else {
+        console.log("....to match, but not matched");
+        const newCards = cards.map((card, i) => {
+          if (i === index) card.visible = true;
+          return card;
+        });
+        setCards(newCards);
+        setTimeout(() => {
+          const newCards = cards.map((card, i) => {
+            if (i === toMatch.index) card.visible = false;
+            if (i === index) card.visible = false;
+            return card;
+          });
+          setCards(newCards);
+          setToMatch(null);
+        }, 300);
+      }
+    }
+  };
+
+  const checkFinish = () => {
+    const finished = !cards.some((card) => card.found === false);
+    if (finished) setFinish(true);
+  };
+
+  const playAgain = () => {
+    initialize(cardsNum);
+  };
+
+  const onCardsNumChange = (event, data) => {
+    console.log(data.value);
+    if (cardsNum !== data.value) {
+      setCardsNum(data.value);
+      initialize(data.value);
+    }
+  };
+
+  const renderCards = () => {
+    return cards.map((card, index) => {
+      return (
+        <Grid.Column key={index}>
+          <Card
+            onClick={(event) => {
+              toggleVisible(index);
+              checkFinish();
+            }}
+          >
+            <Transition
+              visible={card.visible}
+              animation="horizontal flip"
+              duration={500}
+              mountOnShow={false}
+            >
+              <Image src={card.src} wrapped ui={false} />
+            </Transition>
+          </Card>
+        </Grid.Column>
+      );
+    });
+  };
+
   return (
-    <div className={styles.container}>
+    <Container textAlign="center" style={{ paddingTop: "10vh" }}>
       <Head>
-        <title>Create Next App</title>
+        <title>Memory Puzzle</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
-
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
-
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
-
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
-          >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+      <Header>Choose Number of Cards </Header>
+      <Dropdown
+        defaultValue={cardsNum}
+        fluid
+        selection
+        options={cardsOptions}
+        style={{ marginBottom: "20px" }}
+        onChange={onCardsNumChange}
+      />
+      <Grid columns={6}>{renderCards()}</Grid>
+      {finish && <Header>Congratulations!</Header>}
+      <Header color="grey" as="h2">{`Total Try: ${totalTry}`}</Header>
+      <Button
+        content={finish ? "Play Again" : "Start Over"}
+        onClick={playAgain}
+        color="teal"
+        style={{ marginTop: "20px" }}
+      />
+    </Container>
+  );
 }
